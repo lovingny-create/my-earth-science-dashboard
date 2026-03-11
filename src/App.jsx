@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
-import { Clock, Radio, CheckCircle2, Cloud, Sun, Utensils, Calendar, AlertCircle } from 'lucide-react';
+import { Clock, Radio, CheckCircle2, Cloud, Sun, Utensils, Calendar, LayoutGrid, AlertCircle } from 'lucide-react';
 
 export default function App() {
   const [grid, setGrid] = useState([]);
@@ -10,46 +10,26 @@ export default function App() {
   const [now, setNow] = useState(new Date());
   const [currentPos, setCurrentPos] = useState({ dayIdx: -1, periodIdx: -1 });
 
-  // --- [환경 설정: 인증키를 반드시 따옴표 안에 넣으세요] ---
-  const NEIS_API_KEY = "여기에_나이스_인증키를_넣으세요"; // 이 부분이 빠져있었습니다!
-  
-  // 시간표 시트 주소 (gid=0)
+  // --- [환경 설정] ---
+  const NEIS_API_KEY = "5bfe4967b9b64a3fb1693f1cc5371d50"; // 선생님의 인증키를 확인해 주세요
   const TIMETABLE_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfFMWDov9yz7QPfJOrdu15kgAdzhpJ-kMkn1zW6QjiRUzAecmNh4sPO9C3HzYmmlhl5xS5su3EWQSy/pub?gid=0&single=true&output=csv";
-  
-  // 할일 목록 시트 주소 
-    const TODO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxvJNpIbTWQjSt7_L0-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?gid=0&single=true&output=csv";
-  
+  const TODO_URL = "  const TODO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxvJNpIbTWQjSt7_L0-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?gid=0&single=true&output=csv";
+";
   const WEATHER_API_KEY = "9addde09be74cdb63aab8481a0a207a0"; 
   const CITY = "Gwangju";
-  const SUN_IMAGE_URL = "https://suntoday.lmsal.com/suntoday/images/latest_171.jpg";
 
   useEffect(() => {
     const fetchData = () => {
       const cb = `&t=${Date.now()}`;
-
-      // 1. 시간표 데이터
-      Papa.parse(`${TIMETABLE_URL}${cb}`, {
-        download: true,
-        complete: (res) => { if (res.data) setGrid(res.data); }
-      });
-      
-      // 2. 할일 목록 데이터
-      Papa.parse(`${TODO_URL}${cb}`, {
-        download: true,
-        complete: (res) => {
-          if (res.data) {
-            const fetched = res.data
-              .filter(row => row[0]?.trim())
-              .map((row, idx) => ({ id: `todo-${idx}`, text: row[0] }));
-            setTodos(fetched);
-          }
+      Papa.parse(`${TIMETABLE_URL}${cb}`, { download: true, complete: (res) => { if (res.data) setGrid(res.data); } });
+      Papa.parse(`${TODO_URL}${cb}`, { download: true, complete: (res) => {
+        if (res.data) {
+          const fetched = res.data.filter(row => row[0]?.trim()).map((row, idx) => ({ id: `todo-${idx}`, text: row[0] }));
+          setTodos(fetched);
         }
-      });
-
-      // 3. 기상청 데이터
+      }});
       fetch(`https://api.openweathermap.org/data/2.5/weather?q=${CITY}&appid=${WEATHER_API_KEY}&units=metric&lang=kr`)
         .then(res => res.json()).then(data => setWeather(data));
-
       fetchMeal();
     };
 
@@ -60,127 +40,114 @@ export default function App() {
       let code = "2", label = "점심";
       if (hour < 9) { code = "1"; label = "아침"; } else if (hour >= 14) { code = "3"; label = "저녁"; }
 
-      // 인증키가 정의되었으므로 이제 정상 작동합니다.
       fetch(`https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${NEIS_API_KEY}&Type=json&ATPT_OFCDC_SC_CODE=F10&SD_SCHUL_CODE=7380024&MLSV_YMD=${yyyymmdd}`)
-        .then(res => res.json())
-        .then(data => {
+        .then(res => res.json()).then(data => {
           if (data.mealServiceDietInfo) {
             const row = data.mealServiceDietInfo[1].row.find(r => r.MMEAL_SC_CODE === code) || data.mealServiceDietInfo[1].row[0];
             setMeal({ label: row.MMEAL_SC_NM, menu: row.DDISH_NM.replace(/[0-9.()]/g, "").replace(/<br\/>/g, ", ") });
-          } else {
-            setMeal({ label, menu: "식단 정보가 등록되지 않았습니다.🍱" });
-          }
-        }).catch(() => setMeal({ label, menu: "급식 정보를 불러올 수 없습니다." }));
+          } else { setMeal({ label, menu: "식단 정보가 없습니다.🍱" }); }
+        }).catch(() => setMeal({ label, menu: "급식 로딩 실패" }));
     };
 
     const updateTime = () => {
       const d = new Date(); setNow(d);
       const time = d.getHours() * 100 + d.getMinutes();
       let p = -1;
-      if (time >= 850 && time < 950) p = 1;
-      else if (time >= 950 && time < 1050) p = 2;
-      else if (time >= 1050 && time < 1150) p = 3;
-      else if (time >= 1150 && time < 1320) p = 4;
-      else if (time >= 1320 && time < 1420) p = 5;
-      else if (time >= 1420 && time < 1510) p = 6;
+      if (time >= 850 && time < 950) p = 1; else if (time >= 950 && time < 1050) p = 2;
+      else if (time >= 1050 && time < 1150) p = 3; else if (time >= 1150 && time < 1320) p = 4;
+      else if (time >= 1320 && time < 1420) p = 5; else if (time >= 1420 && time < 1510) p = 6;
       else if (time >= 1510 && time < 1610) p = 7;
       setCurrentPos({ dayIdx: d.getDay(), periodIdx: p });
     };
 
     fetchData(); updateTime();
-    const t1 = setInterval(fetchData, 60000); 
-    const t2 = setInterval(updateTime, 1000);
+    const t1 = setInterval(fetchData, 60000); const t2 = setInterval(updateTime, 1000);
     return () => { clearInterval(t1); clearInterval(t2); };
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0A0C10] text-slate-200 p-8 grid grid-cols-12 gap-8 font-sans overflow-hidden">
-      <div className="col-span-3 flex flex-col gap-6">
-        <section className="bg-[#161B22] p-8 rounded-3xl border border-slate-800 shadow-2xl text-center transition-all hover:bg-[#1C2128]">
-          <h1 className="text-6xl font-black text-white leading-none">{now.toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' })}</h1>
-          <p className="text-slate-500 font-bold mt-4 uppercase tracking-widest">{now.toLocaleDateString('ko-KR', { dateStyle: 'full' })}</p>
+    <div className="min-h-screen bg-[#020617] text-slate-200 p-8 grid grid-cols-12 gap-8 font-sans overflow-hidden relative">
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-900/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+      {/* 1단 (좌측): 시간 -> 날씨 -> 시간표 -> 급식표 */}
+      <div className="col-span-4 flex flex-col gap-6 z-10 overflow-hidden h-full">
+        {/* 1. 시간 */}
+        <section className="bg-white/5 backdrop-blur-xl p-8 rounded-[2rem] border border-white/10 shadow-2xl text-center">
+          <h1 className="text-6xl font-black text-white tracking-tighter italic">
+            {now.toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' })}
+          </h1>
+          <p className="text-blue-400 font-bold mt-2 uppercase tracking-[0.2em]">{now.toLocaleDateString('ko-KR', { dateStyle: 'full' })}</p>
         </section>
 
-        <section className="bg-[#161B22] p-6 rounded-3xl border border-slate-800 flex items-center justify-around shadow-lg">
-          <Cloud size={50} className="text-sky-400" />
+        {/* 2. 날씨 */}
+        <section className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 flex items-center justify-around shadow-lg transition-all hover:bg-white/10">
+          <Cloud size={40} className="text-sky-400" />
           <div className="text-right">
             <p className="text-3xl font-black text-white">{weather?.main ? Math.round(weather.main.temp) : '--'}°C</p>
-            <p className="text-slate-400 text-sm font-bold">{weather?.weather?.[0]?.description || "로딩 중"}</p>
+            <p className="text-slate-400 text-sm font-bold uppercase">{weather?.weather?.[0]?.description || "Loading"}</p>
           </div>
         </section>
 
-        <section className="bg-[#161B22] p-8 rounded-3xl border border-slate-800 flex-1 flex flex-col justify-center">
-          <h3 className="text-xl font-black text-amber-400 mb-4 flex items-center gap-2 border-b border-slate-800 pb-2"><Utensils size={20} /> {meal.label}</h3>
-          <p className="text-base font-bold leading-relaxed text-slate-300">{meal.menu}</p>
-        </section>
-
-        <section className="bg-black p-4 rounded-3xl border border-slate-800 overflow-hidden shadow-inner flex flex-col aspect-square max-h-[300px]">
-          <h3 className="text-[10px] font-black text-red-500 mb-3 flex items-center gap-2 tracking-tighter uppercase">
-            <Sun size={12} /> Real-time Sun (AIA 171)
+        {/* 3. 시간표 (1단 메인) */}
+        <section className="bg-white/5 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/10 shadow-xl flex-1 flex flex-col min-h-0 overflow-hidden">
+          <h3 className="text-lg font-black text-white mb-6 flex items-center gap-3">
+            <LayoutGrid size={20} className="text-indigo-400" /> WEEKLY SCHEDULE
           </h3>
-          <div className="rounded-xl overflow-hidden bg-slate-900 flex-1 relative group">
-            <img 
-              src={`${SUN_IMAGE_URL}?t=${Date.now()}`} 
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-              alt="Sun"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.parentNode.innerHTML = '<div class="text-[10px] text-slate-600 font-bold text-center p-4">NASA 서버 이전 작업 중</div>';
-              }}
-            />
+          <div className="flex-1 grid grid-cols-6 gap-2 text-[11px]">
+            <div />
+            {["월", "화", "수", "목", "금"].map((d, i) => (
+              <div key={d} className={`text-center font-black pb-2 ${currentPos.dayIdx === i + 1 ? "text-blue-400" : "text-slate-600"}`}>{d}</div>
+            ))}
+            {[1, 2, 3, 4, 5, 6, 7].map(p => (
+              <React.Fragment key={p}>
+                <div className="flex items-center justify-center bg-white/5 rounded-lg font-black text-slate-500">{p}</div>
+                {[1, 2, 3, 4, 5].map(d => {
+                  const teacher = grid[p]?.[d] || "";
+                  const isActive = currentPos.dayIdx === d && currentPos.periodIdx === p;
+                  return (
+                    <div key={`${d}-${p}`} className={`flex items-center justify-center rounded-xl font-bold border-2 transition-all ${isActive ? "bg-white text-black border-white shadow-lg scale-110 z-10" : "bg-black/20 border-white/5 text-slate-500"}`}>
+                      {teacher}
+                    </div>
+                  );
+                })}
+              </React.Fragment>
+            ))}
           </div>
+        </section>
+
+        {/* 4. 급식표 */}
+        <section className="bg-gradient-to-br from-indigo-500/10 to-purple-600/5 backdrop-blur-md p-7 rounded-[2rem] border border-indigo-500/20 shadow-xl">
+          <h3 className="text-lg font-black text-indigo-400 mb-3 flex items-center gap-2">
+            <Utensils size={20} /> {meal.label}
+          </h3>
+          <p className="text-base font-bold leading-relaxed text-slate-200">{meal.menu}</p>
         </section>
       </div>
 
-      <main className="col-span-6 bg-[#161B22] rounded-[2.5rem] border border-slate-800 p-10 flex flex-col shadow-2xl relative overflow-hidden">
-        <header className="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
-          <h2 className="text-3xl font-black text-white flex items-center gap-4">
-            <Radio className="text-red-500 animate-pulse" size={32} /> 실시간 스테이션
-          </h2>
-          <span className="text-[10px] font-black text-slate-500 bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700 uppercase tracking-widest">Live Sync Enabled</span>
+      {/* 2단: 할 일 목록 (우측 대화면) */}
+      <aside className="col-span-8 bg-white/5 backdrop-blur-2xl rounded-[3rem] border border-white/10 p-12 flex flex-col shadow-2xl z-10">
+        <header className="flex justify-between items-center mb-10 border-b border-white/10 pb-8">
+          <h3 className="text-4xl font-black text-white flex items-center gap-5">
+            <CheckCircle2 size={40} className="text-emerald-400" /> TODO LIST
+          </h3>
+          <span className="bg-emerald-500/10 text-emerald-400 px-6 py-2 rounded-full text-sm font-black tracking-widest border border-emerald-500/20 uppercase">Station Tasks</span>
         </header>
-
-        <div className="flex-1 grid grid-cols-6 gap-5">
-          <div />
-          {["MON", "TUE", "WED", "THU", "FRI"].map((d, i) => (
-            <div key={d} className={`text-center text-sm font-black tracking-widest ${currentPos.dayIdx === i + 1 ? "text-blue-400" : "text-slate-600"}`}>{d}</div>
-          ))}
-          {[1, 2, 3, 4, 5, 6, 7].map(p => (
-            <React.Fragment key={p}>
-              <div className="flex items-center justify-center bg-slate-800/20 rounded-xl font-black text-xl text-slate-500">{p}</div>
-              {[1, 2, 3, 4, 5].map(d => {
-                const teacher = grid[p]?.[d] || "";
-                const isActive = currentPos.dayIdx === d && currentPos.periodIdx === p;
-                return (
-                  <div key={`${d}-${p}`} className={`flex items-center justify-center rounded-2xl text-lg font-bold border-2 transition-all duration-300 ${isActive ? "bg-white text-black border-white shadow-[0_0_30px_rgba(255,255,255,0.15)] z-10 scale-105" : "bg-black/20 border-slate-800 text-slate-600 hover:border-slate-700 hover:bg-black/40"}`}>
-                    {teacher}
-                  </div>
-                );
-              })}
-            </React.Fragment>
-          ))}
-        </div>
-      </main>
-
-      <aside className="col-span-3 bg-[#161B22] rounded-3xl border border-slate-800 p-8 flex flex-col shadow-xl overflow-hidden">
-        <h3 className="text-xl font-black text-slate-500 mb-8 flex items-center gap-3 uppercase tracking-tighter"><CheckCircle2 size={24} /> Tasks</h3>
-        <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+        
+        <div className="flex-1 overflow-y-auto space-y-6 pr-4 custom-scrollbar">
           {todos.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center opacity-20 text-slate-500 text-center">
-              <AlertCircle size={40} className="mb-2" />
-              <p className="font-bold text-sm">No Pending Tasks</p>
+            <div className="h-full flex flex-col items-center justify-center opacity-20">
+              <Calendar size={100} className="text-slate-600 mb-6" />
+              <p className="text-2xl font-black">새로운 할 일을 추가해 보세요.</p>
             </div>
           ) : (
             todos.map(t => (
-              <div key={t.id} className="p-6 rounded-2xl bg-black/30 border border-slate-800 text-slate-200 font-bold text-lg hover:border-blue-500/50 transition-all shadow-sm">
-                {t.text}
+              <div key={t.id} className="p-8 rounded-[2.5rem] bg-white/5 border border-white/5 hover:border-emerald-500/30 hover:bg-white/10 transition-all shadow-md group">
+                <p className="text-3xl font-bold text-slate-200 group-hover:text-white transition-colors">{t.text}</p>
               </div>
             ))
           )}
         </div>
-        <div className="mt-8 pt-6 border-t border-slate-800 text-[9px] text-slate-700 font-black text-center tracking-[0.3em] uppercase">
-          Station Dashboard v2.6
-        </div>
+        <footer className="mt-10 text-[10px] text-slate-700 font-black text-center tracking-[0.5em] uppercase">Smart Lab Station v3.1</footer>
       </aside>
     </div>
   );
