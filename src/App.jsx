@@ -16,8 +16,8 @@ export default function App() {
   // 시간표 시트 주소 (gid=0)
   const TIMETABLE_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfFMWDov9yz7QPfJOrdu15kgAdzhpJ-kMkn1zW6QjiRUzAecmNh4sPO9C3HzYmmlhl5xS5su3EWQSy/pub?gid=0&single=true&output=csv";
   
-  // 할일 목록 시트 주소 (시트2의 gid인 210287103으로 수정했습니다)
-  const TODO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxVJNpIbTWQjSt7_L0-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?gid=210287103&single=true&output=csv";
+  // 할일 목록 시트 주소 
+    const TODO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxvJNpIbTWQjSt7_L0-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?gid=0&single=true&output=csv";
   
   const WEATHER_API_KEY = "9addde09be74cdb63aab8481a0a207a0"; 
   const CITY = "Gwangju";
