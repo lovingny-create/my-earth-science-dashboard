@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* 여기에 아까 제가 드린 Glow 애니메이션 코드를 추가하면 더 좋습니다! */
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+  50% { box-shadow: 0 0 25px rgba(59, 130, 246, 0.8); }
+}
+.active-period-glow {
+  animation: glow 2s infinite ease-in-out;
+}
