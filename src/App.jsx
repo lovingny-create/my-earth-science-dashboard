@@ -13,7 +13,7 @@ export default function App() {
   // --- [환경 설정] ---
   const NEIS_API_KEY = "5bfe4967b9b64a3fb1693f1cc5371d50"; // 선생님의 인증키를 확인해 주세요
   const TIMETABLE_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfFMWDov9yz7QPfJOrdu15kgAdzhpJ-kMkn1zW6QjiRUzAecmNh4sPO9C3HzYmmlhl5xS5su3EWQSy/pub?gid=0&single=true&output=csv";
-  const TODO_URL = "  const TODO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxvJNpIbTWQjSt7_L0-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?gid=0&single=true&output=csv";
+  const TODO_URL =  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxvJNpIbTWQjSt7_L0-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?gid=0&single=true&output=csv";
 ";
   const WEATHER_API_KEY = "9addde09be74cdb63aab8481a0a207a0"; 
   const CITY = "Gwangju";
