@@ -26,12 +26,11 @@ export default function App() {
   const [currentPos, setCurrentPos] = useState({ dayIdx: -1, periodIdx: -1 });
 
   const TIMETABLE_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfFMWDov9yz7QPfJOrdu15kgAdzhpJ-kMkn1zW6QjiRUzAecmNh4sPO9C3HzYmmlhl5xS5su3EWQSy/pub?gid=0&single=true&output=csv";
-  const TODO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxVJNpIbTWQjSt7_L0-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?gid=210287103&single=true&output=csv";
+  const TODO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxVJNpIbTWQjSt7_LO-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?gid=210287103&single=true&output=csv";
   const WEATHER_API_KEY = "9addde09be74cdb63aab8481a0a207a0"; 
   const CITY = "Gwangju";
   const SUN_IMAGE_URL = "https://suntoday.lmsal.com/suntoday/images/latest_171.jpg";
 
-  // --- [월령 계산 로직] ---
   const getMoonPhase = (d) => {
     let year = d.getFullYear(); let month = d.getMonth() + 1; let day = d.getDate();
     if (month < 3) { year--; month += 12; }
@@ -71,7 +70,6 @@ export default function App() {
     return () => { clearInterval(t1); clearInterval(t2); };
   }, []);
 
-  // --- [현재 달 일정 필터링] ---
   const currentMonthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
   const currentMonthPlans = ACADEMIC_CALENDAR[currentMonthKey] || [];
   const moonAge = getMoonPhase(now).toFixed(1);
@@ -80,12 +78,10 @@ export default function App() {
     <div className="min-h-screen bg-[#020617] text-slate-200 p-8 grid grid-cols-12 gap-8 font-sans overflow-hidden relative">
       <div className="absolute top-[-5%] left-[-5%] w-[30%] h-[30%] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none"></div>
 
-      {/* 1단 (좌측): 일시, 날씨, 시간표 */}
+      {/* 1단 (좌측) */}
       <div className="col-span-3 flex flex-col gap-6 overflow-hidden">
         <section className="bg-white/5 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl text-center">
-          <h1 className="text-6xl font-black text-white italic drop-shadow-md">
-            {now.toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' })}
-          </h1>
+          <h1 className="text-6xl font-black text-white italic">{now.toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' })}</h1>
           <p className="text-indigo-400 font-bold mt-3 uppercase tracking-widest">{now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</p>
         </section>
 
@@ -98,9 +94,7 @@ export default function App() {
         </section>
 
         <section className="bg-white/5 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/10 shadow-xl flex-1 flex flex-col min-h-0 overflow-hidden">
-          <h3 className="text-lg font-black text-white mb-6 flex items-center gap-3">
-            <LayoutGrid size={20} className="text-indigo-400" /> TIMETABLE
-          </h3>
+          <h3 className="text-lg font-black text-white mb-6 flex items-center gap-3"><LayoutGrid size={20} className="text-indigo-400" /> TIMETABLE</h3>
           <div className="flex-1 grid grid-cols-6 gap-2 text-[10px]">
             <div />{["M", "T", "W", "T", "F"].map((d, i) => (<div key={d} className={`text-center font-black pb-1 ${currentPos.dayIdx === i+1 ? "text-indigo-400" : "text-slate-600"}`}>{d}</div>))}
             {[1, 2, 3, 4, 5, 6, 7].map(p => (
@@ -109,9 +103,7 @@ export default function App() {
                 {[1, 2, 3, 4, 5].map(d => {
                   const teacher = grid[p]?.[d] || "";
                   const isActive = currentPos.dayIdx === d && currentPos.periodIdx === p;
-                  return (
-                    <div key={`${d}-${p}`} className={`flex items-center justify-center rounded-xl font-bold border ${isActive ? "bg-white text-black border-white shadow-xl scale-105 z-10" : "bg-white/5 border-white/5 text-slate-500"}`}>{teacher}</div>
-                  );
+                  return (<div key={`${d}-${p}`} className={`flex items-center justify-center rounded-xl font-bold border ${isActive ? "bg-white text-black border-white shadow-xl scale-105 z-10" : "bg-white/5 border-white/5 text-slate-500"}`}>{teacher}</div>);
                 })}
               </React.Fragment>
             ))}
@@ -119,7 +111,7 @@ export default function App() {
         </section>
       </div>
 
-      {/* 2단 (중앙): 태양, 월령, 월중계획 */}
+      {/* 2단 (중앙): 통합 박스 레이아웃 적용 */}
       <div className="col-span-5 flex flex-col gap-6 overflow-hidden">
         <div className="grid grid-cols-2 gap-6">
           <section className="bg-black/40 backdrop-blur-md p-4 rounded-[2.5rem] border border-red-500/20 shadow-2xl group">
@@ -128,53 +120,43 @@ export default function App() {
               <img src={`${SUN_IMAGE_URL}?t=${Date.now()}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Sun" />
             </div>
           </section>
-
           <section className="bg-white/5 backdrop-blur-md p-8 rounded-[2.5rem] border border-white/10 flex flex-col justify-center items-center text-center shadow-xl">
             <div className="p-4 bg-yellow-400/10 rounded-full mb-4"><Moon size={40} className="text-yellow-200" /></div>
             <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Moon Phase</p>
             <p className="text-4xl font-black text-yellow-200 tracking-tighter">{moonAge}<span className="text-sm ml-1 text-slate-500">d</span></p>
-            <p className="text-xs font-bold text-slate-400 mt-2">오늘의 월령</p>
           </section>
         </div>
 
-        <section className="bg-gradient-to-br from-indigo-500/10 to-transparent backdrop-blur-md p-8 rounded-[3rem] border border-indigo-500/20 flex-1 flex flex-col min-h-0">
+        {/* [학사 일정 통합 박스 영역] */}
+        <section className="bg-gradient-to-br from-indigo-500/10 to-transparent backdrop-blur-md p-8 rounded-[3rem] border border-indigo-500/20 flex-1 flex flex-col min-h-0 overflow-hidden">
           <h3 className="text-2xl font-black text-indigo-300 mb-6 flex items-center gap-3 italic">
             <Bell size={28} /> {now.getMonth() + 1}월 학사 일정
           </h3>
-          <div className="flex-1 overflow-y-auto space-y-4 pr-3 custom-scrollbar">
-            {currentMonthPlans.length > 0 ? currentMonthPlans.map((plan, idx) => (
-              <div key={idx} className="p-5 rounded-2xl bg-white/5 border border-white/5 text-lg font-bold text-slate-300 hover:bg-white/10 transition-all shadow-sm">
-                {plan}
+          <div className="flex-1 overflow-y-auto bg-white/5 rounded-3xl p-6 border border-white/5 shadow-inner custom-scrollbar">
+            {currentMonthPlans.length > 0 ? (
+              <div className="space-y-4">
+                {currentMonthPlans.map((plan, idx) => (
+                  <p key={idx} className="text-lg font-bold text-slate-300 leading-relaxed border-b border-white/5 pb-3 last:border-0 last:pb-0">
+                    {plan}
+                  </p>
+                ))}
               </div>
-            )) : <p className="text-slate-600 font-bold text-center mt-10 italic">이번 달은 등록된 일정이 없습니다.</p>}
+            ) : (
+              <p className="text-slate-600 font-bold text-center mt-10 italic">이번 달은 등록된 일정이 없습니다.</p>
+            )}
           </div>
         </section>
       </div>
 
-      {/* 3단 (우측): TO DO LIST */}
+      {/* 3단 (우측) */}
       <aside className="col-span-4 bg-white/5 backdrop-blur-2xl rounded-[3rem] border border-white/10 p-10 flex flex-col shadow-2xl h-full">
         <header className="flex justify-between items-center mb-10 border-b border-white/10 pb-8">
-          <h3 className="text-3xl font-black text-white flex items-center gap-5">
-            <ListChecks size={36} className="text-emerald-400" /> TODO LIST
-          </h3>
-          <span className="text-[10px] font-black text-slate-500 bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700 tracking-[0.2em] uppercase">Private</span>
+          <h3 className="text-3xl font-black text-white flex items-center gap-5"><ListChecks size={36} className="text-emerald-400" /> TODO LIST</h3>
         </header>
-        
         <div className="flex-1 overflow-y-auto space-y-5 pr-3 custom-scrollbar">
-          {todos.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center opacity-20">
-              <Calendar size={80} className="text-slate-600 mb-4" />
-              <p className="text-xl font-black">할 일을 작성해 보세요.</p>
-            </div>
-          ) : (
-            todos.map(t => (
-              <div key={t.id} className="p-7 rounded-[2rem] bg-white/5 border border-white/5 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all shadow-md group">
-                <p className="text-2xl font-bold text-slate-200 group-hover:text-white">{t.text}</p>
-              </div>
-            ))
-          )}
+          {todos.length === 0 ? (<div className="h-full flex flex-col items-center justify-center opacity-20"><Calendar size={80} className="text-slate-600 mb-4" /><p className="text-xl font-black">할 일을 작성해 보세요.</p></div>) : 
+            todos.map(t => (<div key={t.id} className="p-7 rounded-[2rem] bg-white/5 border border-white/5 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all shadow-md group"><p className="text-2xl font-bold text-slate-200 group-hover:text-white">{t.text}</p></div>))}
         </div>
-        <footer className="mt-8 pt-8 border-t border-white/5 text-[9px] text-slate-700 font-black text-center tracking-[0.5em] uppercase italic">Smart Station v4.5</footer>
       </aside>
     </div>
   );
