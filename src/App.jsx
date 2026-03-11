@@ -13,7 +13,41 @@ export default function App() {
 
   const NEIS_API_KEY = "5bfe4967b9b64a3fb1693f1cc5371d50"; 
   const TIMETABLE_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfFMWDov9yz7QPfJOrdu15kgAdzhpJ-kMkn1zW6QjiRUzAecmNh4sPO9C3HzYmmlhl5xS5su3EWQSy/pub?gid=0&output=csv";
-  const TODO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfFMWDov9yz7QPfJOrdu15kgAdzhpJ-kMkn1zW6QjiRUzAecmNh4sPO9C3HzYmmlhl5xS5su3EWQSy/pub?gid=210287103&output=csv";
+  const TODO_URL = "
+지구과학과 TODO LIST
+지구과학과 TODO LIST
+
+100%
+10
+A1
+
+지구과학과 기자재 논의
+ 
+ 
+ 	
+
+
+스크린 리더 지원 사용 설정
+스크린 리더 기능을 사용하려면 Ctrl+Alt+Z을(를) 누르세요. 단축키에 대해 알아보려면 Ctrl+슬래시을(를) 누르세요.
+웹에 게시
+웹에 게시된 문서입니다.
+
+콘텐츠를 웹에 게시하여 모든 사용자에게 공개하세요. 문서 링크를 올리거나 문서를 삽입할 수 있습니다. 자세히 알아보기
+
+링크
+
+삽입
+전체 문서
+쉼표로 구분된 값(.csv)
+참고: 뷰어가 게시된 차트의 기본 데이터에 액세스할 수도 있습니다. 자세히 알아보기
+https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxvJNpIbTWQjSt7_L0-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?output=csv
+복사하려면 Ctrl+C 키를 누르세요.
+
+복사하려면 Ctrl+C 키를 누르세요.
+또는 다음을 통해 링크를 공유합니다.
+
+파일이 수정되면 자동으로 다시 게시
+";
   const WEATHER_API_KEY = "9addde09be74cdb63aab8481a0a207a0"; 
   const CITY = "Gwangju";
 
