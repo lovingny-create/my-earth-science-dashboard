@@ -1,59 +1,56 @@
 import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
-import { Clock, Radio, CheckCircle2, Cloud, Sun, Calendar, LayoutGrid, Moon, ListChecks, Bell } from 'lucide-react';
+import { Clock, Radio, CheckCircle2, Cloud, Sun, Calendar, LayoutGrid, Moon, ListChecks, Bell, Zap } from 'lucide-react';
+
+// --- [1년치 학사 일정 데이터베이스] ---
+const ACADEMIC_CALENDAR = {
+  "2026-3": ["2(월): 입사일, 1학기 시작일", "3(화): 1학기 개학일, 입학식", "9(월): 학급임원 선출, 학급자치회 편성", "13(금): 퇴사일", "18(수): 졸업논문계획서 제출", "20(금): 3학년 교육과정설명회", "25(수): 심화R&E계획서 제출, 자기소개서 특강(3학년)", "26(목): 학술동아리", "27(금): 1, 2학년 교육과정설명회, 퇴사일"],
+  "2026-4": ["1(수): 수요일 수업", "2(목): 학술동아리", "3(금): 1인 1기 활동", "4(토): 과학나눔 페스티벌", "10(금): 퇴사일", "21(화)~24(금): 1차 지필평가", "24(금): 퇴사일", "28(화): 인문감성프로그램"],
+  "2026-5": ["1(금): 퇴사일", "5(화): 어린이날", "7(목): 스포츠 문화축전", "8(금): 대학탐방/역사알기, 퇴사일", "9(토): 과학아카데미 1차", "12(화): 화요일 수업", "14(목)~15(금): 도서관의 날", "15(금): 1인 1기 활동", "20(수)~22(금): 수업공개의 날", "21(목)~29(금): 수강신청 기간", "22(금): 퇴사일", "25(월): 석가탄신일 대체공휴일", "29(금): 1인 1기 활동"],
+  "2026-6": ["3(수): 지방선거", "5(금): 퇴사일", "6(토): 현충일", "10(수): 연구활동보고서 제출", "11(목): 학술동아리", "12(금): 1인 1기 활동", "15(월): 상반기 모범학생 표창", "22(월)~26(금): 2차 지필평가", "23(화): 금요일 대체 수업, 퇴사일", "29(월): 학생회 선거"],
+  "2026-7": ["3(금): 3학년 교육과정설명회, 퇴사일, 방학일", "12(일): 신입생 2차 평가"],
+  "2026-8": ["8(토): 신입생 3차 전형", "15(토): 광복절", "17(월): 광복절 대체휴일, 입사일", "18(화): 2학기 개학일/시작일", "21(금): 1인 1기 활동", "28(금): 퇴사일"],
+  "2026-9": ["4(금)~6(일): 과학기술창업캠프", "7(월)~11(금): 수시 원서 접수 기간", "10(목): 과학아카데미 2차", "11(금): 1,2학년 설명회, 퇴사일", "16(수): 퇴사일, 교직원 워크숍", "18(금): 1인 1기 활동", "24(목)~27(일): 추석 연휴", "29(화): 목요일 대체 수업"],
+  "2026-10": ["3(토): 개천절", "5(월): 개천절 대체휴일", "9(금): 한글날", "12(월)~16(금): 1차 지필평가", "16(금): 퇴사일", "17(토): 학술동아리", "23(금): 퇴사일", "26(월): 학술동아리", "30(금): 1인 1기 활동"],
+  "2026-11": ["2(월): 월요일 대체 수업, 퇴사일", "3(화): 금요일 대체 수업", "4(수)~6(금): 1,2학년 자연탐사 / 3학년 입시", "6(금): 퇴사일", "11(수)~13(금): 2학기 수업공개", "12(목)~13(금): 독서의 날 행사", "17(화): 동아리 발표대회", "18(수): 연구활동보고서 제출", "20(금): 퇴사일", "25(수): 연구활동 발표대회", "27(금): 1인 1기 활동"],
+  "2026-12": ["2(수): 수요일 수업", "4(금): 퇴사일", "10(목)~16(수): 2차 지필평가", "18(금): 퇴사일", "22(화): 졸업사정회, 축제", "24(목): 화요일 대체 수업, 방학일, 퇴사일", "25(금): 성탄절"],
+  "2027-1": ["1(금): 신정", "4(월)~10(일): 국제교류", "14(목)~15(금): 신구부장 워크숍"],
+  "2027-2": ["1(월): 퇴사일", "2(화)~13(토): 수강신청", "5(금): 영재선정심사위원회", "6(토)~9(화): 설날 연휴", "18(목)~19(금): 신학기 워크숍", "27(토): 졸업식", "28(일): 1, 2학년 2학기 종료일"]
+};
 
 export default function App() {
   const [grid, setGrid] = useState([]);
   const [todos, setTodos] = useState([]);
-  const [monthlyPlan, setMonthlyPlan] = useState([]); // 월중계획 상태 추가
   const [weather, setWeather] = useState(null);
   const [now, setNow] = useState(new Date());
   const [currentPos, setCurrentPos] = useState({ dayIdx: -1, periodIdx: -1 });
 
-  // --- [환경 설정: 구글 시트 주소를 확인해 주세요] ---
   const TIMETABLE_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfFMWDov9yz7QPfJOrdu15kgAdzhpJ-kMkn1zW6QjiRUzAecmNh4sPO9C3HzYmmlhl5xS5su3EWQSy/pub?gid=0&single=true&output=csv";
-  const TODO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxVJNpIbTWQjSt7_LO-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?gid=210287103&single=true&output=csv";
-  
-  // 월중계획용 시트 주소 (필요시 시트3 등을 만들어 gid를 수정해 주세요)
-  const PLAN_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxVJNpIbTWQjSt7_LO-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?gid=시트GID번호&single=true&output=csv";
-  
+  const TODO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxVJNpIbTWQjSt7_L0-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?gid=210287103&single=true&output=csv";
   const WEATHER_API_KEY = "9addde09be74cdb63aab8481a0a207a0"; 
   const CITY = "Gwangju";
   const SUN_IMAGE_URL = "https://suntoday.lmsal.com/suntoday/images/latest_171.jpg";
 
   // --- [월령 계산 로직] ---
-  const getMoonPhase = (date) => {
-    let year = date.getFullYear(); let month = date.getMonth() + 1; let day = date.getDate();
+  const getMoonPhase = (d) => {
+    let year = d.getFullYear(); let month = d.getMonth() + 1; let day = d.getDate();
     if (month < 3) { year--; month += 12; }
     const a = Math.floor(year / 100); const b = Math.floor(a / 4);
-    const c = 2 - a + b; const e = Math.floor(365.25 * (year + 4716));
-    const f = Math.floor(30.6001 * (month + 1));
-    const jd = c + day + e + f - 1524.5; // 율리우스 적일
-    const cycle = 29.530588853;
-    const phase = (jd - 2451550.1) / cycle;
-    return (phase - Math.floor(phase)) * 30; // 0~30 사이의 월령 값
+    const jd = (2 - a + b) + day + Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) - 1524.5;
+    const phase = ((jd - 2451550.1) / 29.530588853) % 1;
+    return phase * 30;
   };
 
   useEffect(() => {
     const fetchData = () => {
       const cb = `&t=${Date.now()}`;
-      // 1. 시간표
-      Papa.parse(`${TIMETABLE_URL}${cb}`, { download: true, complete: (res) => { if (res.data) setGrid(res.data); } });
-      // 2. 할일 목록
-      Papa.parse(`${TODO_URL}${cb}`, { download: true, complete: (res) => {
+      Papa.parse(TIMETABLE_URL + cb, { download: true, complete: (res) => { if (res.data) setGrid(res.data); } });
+      Papa.parse(TODO_URL + cb, { download: true, complete: (res) => {
         if (res.data) {
-          const fetched = res.data.filter(row => row[0]?.trim()).map((row, idx) => ({ id: `todo-${idx}`, text: row[0] }));
+          const fetched = res.data.filter(row => row[0]?.trim()).map((row, idx) => ({ id: `t-${idx}`, text: row[0] }));
           setTodos(fetched);
         }
       }});
-      // 3. 월중 계획
-      Papa.parse(`${PLAN_URL}${cb}`, { download: true, complete: (res) => {
-        if (res.data) {
-          const fetched = res.data.filter(row => row[0]?.trim()).map((row, idx) => ({ id: `plan-${idx}`, text: row[0] }));
-          setMonthlyPlan(fetched);
-        }
-      }});
-      // 4. 날씨
       fetch(`https://api.openweathermap.org/data/2.5/weather?q=${CITY}&appid=${WEATHER_API_KEY}&units=metric&lang=kr`)
         .then(res => res.json()).then(data => setWeather(data));
     };
@@ -74,44 +71,46 @@ export default function App() {
     return () => { clearInterval(t1); clearInterval(t2); };
   }, []);
 
+  // --- [현재 달 일정 필터링] ---
+  const currentMonthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
+  const currentMonthPlans = ACADEMIC_CALENDAR[currentMonthKey] || [];
   const moonAge = getMoonPhase(now).toFixed(1);
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 p-8 grid grid-cols-3 gap-8 font-sans overflow-hidden relative">
-      <div className="absolute top-[-5%] left-[-5%] w-[30%] h-[30%] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+    <div className="min-h-screen bg-[#020617] text-slate-200 p-8 grid grid-cols-12 gap-8 font-sans overflow-hidden relative">
+      <div className="absolute top-[-5%] left-[-5%] w-[30%] h-[30%] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none"></div>
 
       {/* 1단 (좌측): 일시, 날씨, 시간표 */}
-      <div className="flex flex-col gap-6 h-full overflow-hidden">
-        <section className="bg-white/5 backdrop-blur-xl p-8 rounded-[2rem] border border-white/10 shadow-2xl text-center">
-          <h1 className="text-6xl font-black text-white tracking-tighter italic">{now.toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' })}</h1>
-          <p className="text-blue-400 font-bold mt-2 uppercase tracking-[0.2em]">{now.toLocaleDateString('ko-KR', { dateStyle: 'full' })}</p>
+      <div className="col-span-3 flex flex-col gap-6 overflow-hidden">
+        <section className="bg-white/5 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl text-center">
+          <h1 className="text-6xl font-black text-white italic drop-shadow-md">
+            {now.toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' })}
+          </h1>
+          <p className="text-indigo-400 font-bold mt-3 uppercase tracking-widest">{now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</p>
         </section>
 
-        <section className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 flex items-center justify-around shadow-lg">
+        <section className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 flex items-center justify-around">
           <Cloud size={40} className="text-sky-400" />
           <div className="text-right">
-            <p className="text-3xl font-black text-white">{weather?.main ? Math.round(weather.main.temp) : '--'}°C</p>
+            <p className="text-4xl font-black text-white">{weather?.main ? Math.round(weather.main.temp) : '--'}°</p>
             <p className="text-slate-400 text-sm font-bold uppercase">{weather?.weather?.[0]?.description || "Loading"}</p>
           </div>
         </section>
 
-        <section className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 shadow-xl flex-1 flex flex-col min-h-0 overflow-hidden">
+        <section className="bg-white/5 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/10 shadow-xl flex-1 flex flex-col min-h-0 overflow-hidden">
           <h3 className="text-lg font-black text-white mb-6 flex items-center gap-3">
-            <LayoutGrid size={20} className="text-indigo-400" /> WEEKLY SCHEDULE
+            <LayoutGrid size={20} className="text-indigo-400" /> TIMETABLE
           </h3>
           <div className="flex-1 grid grid-cols-6 gap-2 text-[10px]">
-            <div />
-            {["월", "화", "수", "목", "금"].map((d, i) => (
-              <div key={d} className={`text-center font-black pb-2 ${currentPos.dayIdx === i + 1 ? "text-blue-400" : "text-slate-600"}`}>{d}</div>
-            ))}
+            <div />{["M", "T", "W", "T", "F"].map((d, i) => (<div key={d} className={`text-center font-black pb-1 ${currentPos.dayIdx === i+1 ? "text-indigo-400" : "text-slate-600"}`}>{d}</div>))}
             {[1, 2, 3, 4, 5, 6, 7].map(p => (
               <React.Fragment key={p}>
-                <div className="flex items-center justify-center bg-white/5 rounded-lg font-black text-slate-500">{p}</div>
+                <div className="flex items-center justify-center font-black text-slate-700">{p}</div>
                 {[1, 2, 3, 4, 5].map(d => {
                   const teacher = grid[p]?.[d] || "";
                   const isActive = currentPos.dayIdx === d && currentPos.periodIdx === p;
                   return (
-                    <div key={`${d}-${p}`} className={`flex items-center justify-center rounded-lg font-bold border ${isActive ? "bg-white text-black border-white shadow-lg scale-105 z-10" : "bg-black/20 border-white/5 text-slate-500"}`}>{teacher}</div>
+                    <div key={`${d}-${p}`} className={`flex items-center justify-center rounded-xl font-bold border ${isActive ? "bg-white text-black border-white shadow-xl scale-105 z-10" : "bg-white/5 border-white/5 text-slate-500"}`}>{teacher}</div>
                   );
                 })}
               </React.Fragment>
@@ -120,51 +119,62 @@ export default function App() {
         </section>
       </div>
 
-      {/* 2단 (중앙): 실시간 태양 사진, 월령, 월중계획 */}
-      <div className="flex flex-col gap-6 h-full overflow-hidden">
-        <section className="bg-black/40 backdrop-blur-md p-5 rounded-[2rem] border border-red-500/20 shadow-2xl overflow-hidden group">
-          <h3 className="text-xs font-black text-red-500/80 mb-4 flex items-center gap-2 tracking-[0.3em] uppercase"><Sun size={14} /> SDO Live Monitor</h3>
-          <div className="rounded-2xl overflow-hidden aspect-square border border-white/5">
-            <img src={`${SUN_IMAGE_URL}?t=${Date.now()}`} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-125" alt="Sun" onError={(e) => { e.target.style.display = 'none'; }} />
-          </div>
-        </section>
-
-        <section className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 flex items-center justify-between shadow-xl">
-          <div className="flex items-center gap-4">
-            <Moon size={30} className="text-yellow-200" />
-            <div>
-              <p className="text-slate-400 text-[10px] font-black uppercase">Moon Phase</p>
-              <p className="text-xl font-black text-white">오늘의 월령</p>
+      {/* 2단 (중앙): 태양, 월령, 월중계획 */}
+      <div className="col-span-5 flex flex-col gap-6 overflow-hidden">
+        <div className="grid grid-cols-2 gap-6">
+          <section className="bg-black/40 backdrop-blur-md p-4 rounded-[2.5rem] border border-red-500/20 shadow-2xl group">
+            <h3 className="text-[10px] font-black text-red-500/80 mb-3 flex items-center gap-2 tracking-widest uppercase"><Sun size={12} /> SDO AIA 171</h3>
+            <div className="rounded-2xl overflow-hidden aspect-square border border-white/5">
+              <img src={`${SUN_IMAGE_URL}?t=${Date.now()}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Sun" />
             </div>
-          </div>
-          <p className="text-4xl font-black text-yellow-200 tracking-tighter">{moonAge}<span className="text-sm ml-1 text-slate-500">days</span></p>
-        </section>
+          </section>
 
-        <section className="bg-white/5 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 flex-1 flex flex-col min-h-0">
-          <h3 className="text-lg font-black text-indigo-300 mb-4 flex items-center gap-3">
-            <Bell size={20} /> MONTHLY PLAN
+          <section className="bg-white/5 backdrop-blur-md p-8 rounded-[2.5rem] border border-white/10 flex flex-col justify-center items-center text-center shadow-xl">
+            <div className="p-4 bg-yellow-400/10 rounded-full mb-4"><Moon size={40} className="text-yellow-200" /></div>
+            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Moon Phase</p>
+            <p className="text-4xl font-black text-yellow-200 tracking-tighter">{moonAge}<span className="text-sm ml-1 text-slate-500">d</span></p>
+            <p className="text-xs font-bold text-slate-400 mt-2">오늘의 월령</p>
+          </section>
+        </div>
+
+        <section className="bg-gradient-to-br from-indigo-500/10 to-transparent backdrop-blur-md p-8 rounded-[3rem] border border-indigo-500/20 flex-1 flex flex-col min-h-0">
+          <h3 className="text-2xl font-black text-indigo-300 mb-6 flex items-center gap-3 italic">
+            <Bell size={28} /> {now.getMonth() + 1}월 학사 일정
           </h3>
-          <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-            {monthlyPlan.map(p => (
-              <div key={p.id} className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10 text-sm font-bold text-slate-300 transition-all hover:bg-indigo-500/10">{p.text}</div>
-            ))}
+          <div className="flex-1 overflow-y-auto space-y-4 pr-3 custom-scrollbar">
+            {currentMonthPlans.length > 0 ? currentMonthPlans.map((plan, idx) => (
+              <div key={idx} className="p-5 rounded-2xl bg-white/5 border border-white/5 text-lg font-bold text-slate-300 hover:bg-white/10 transition-all shadow-sm">
+                {plan}
+              </div>
+            )) : <p className="text-slate-600 font-bold text-center mt-10 italic">이번 달은 등록된 일정이 없습니다.</p>}
           </div>
         </section>
       </div>
 
       {/* 3단 (우측): TO DO LIST */}
-      <aside className="bg-white/5 backdrop-blur-2xl rounded-[2.5rem] border border-white/10 p-8 flex flex-col shadow-2xl overflow-hidden h-full">
-        <h3 className="text-2xl font-black text-white mb-8 flex items-center gap-4 border-b border-white/10 pb-6">
-          <ListChecks size={30} className="text-emerald-400" /> TO DO LIST
-        </h3>
-        <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-          {todos.map(t => (
-            <div key={t.id} className="p-6 rounded-[1.5rem] bg-white/5 border border-white/5 hover:border-emerald-500/30 hover:bg-white/10 transition-all shadow-md group">
-              <p className="text-xl font-bold text-slate-200 group-hover:text-white transition-colors">{t.text}</p>
+      <aside className="col-span-4 bg-white/5 backdrop-blur-2xl rounded-[3rem] border border-white/10 p-10 flex flex-col shadow-2xl h-full">
+        <header className="flex justify-between items-center mb-10 border-b border-white/10 pb-8">
+          <h3 className="text-3xl font-black text-white flex items-center gap-5">
+            <ListChecks size={36} className="text-emerald-400" /> TODO LIST
+          </h3>
+          <span className="text-[10px] font-black text-slate-500 bg-slate-800/50 px-4 py-2 rounded-full border border-slate-700 tracking-[0.2em] uppercase">Private</span>
+        </header>
+        
+        <div className="flex-1 overflow-y-auto space-y-5 pr-3 custom-scrollbar">
+          {todos.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center opacity-20">
+              <Calendar size={80} className="text-slate-600 mb-4" />
+              <p className="text-xl font-black">할 일을 작성해 보세요.</p>
             </div>
-          ))}
+          ) : (
+            todos.map(t => (
+              <div key={t.id} className="p-7 rounded-[2rem] bg-white/5 border border-white/5 hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all shadow-md group">
+                <p className="text-2xl font-bold text-slate-200 group-hover:text-white">{t.text}</p>
+              </div>
+            ))
+          )}
         </div>
-        <footer className="mt-8 pt-6 border-t border-white/5 text-[9px] text-slate-600 font-black text-center tracking-[0.4em] uppercase">Station Control v4.0</footer>
+        <footer className="mt-8 pt-8 border-t border-white/5 text-[9px] text-slate-700 font-black text-center tracking-[0.5em] uppercase italic">Smart Station v4.5</footer>
       </aside>
     </div>
   );
