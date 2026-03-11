@@ -6,7 +6,7 @@ export default function App() {
   const [grid, setGrid] = useState([]);
   const [todos, setTodos] = useState([]);
   const [weather, setWeather] = useState(null);
-  const [meal, setMeal] = useState({ label: "점심", menu: "로딩 중..." });
+  const [meal, setMeal] = useState({ label: "급식", menu: "데이터를 불러오는 중..." });
   const [now, setNow] = useState(new Date());
   const [currentPos, setCurrentPos] = useState({ dayIdx: -1, periodIdx: -1 });
   const [todoInput, setTodoInput] = useState("");
@@ -16,9 +16,12 @@ export default function App() {
   const [memoMode, setMemoMode] = useState(false);
   const [ctx, setCtx] = useState(null);
 
-  // --- [설정 주소] ---
+  // --- [설정 주소 확인] ---
   const TIMETABLE_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfFMWDov9yz7QPfJOrdu15kgAdzhpJ-kMkn1zW6QjiRUzAecmNh4sPO9C3HzYmmlhl5xS5su3EWQSy/pub?gid=0&output=csv";
-  const TODO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxvJNpIbTWQjSt7_L0-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?output=csv";
+  
+  // TODO_URL: 선생님의 시트2 주소 (gid 번호를 꼭 확인하세요!)
+  const TODO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfFMWDov9yz7QPfJOrdu15kgAdzhpJ-kMkn1zW6QjiRUzAecmNh4sPO9C3HzYmmlhl5xS5su3EWQSy/pub?gid=210287103&output=csv";
+
   const WEATHER_API_KEY = "9addde09be74cdb63aab8481a0a207a0"; 
   const CITY = "Gwangju";
 
@@ -41,7 +44,7 @@ export default function App() {
       fetch("https://api.openweathermap.org/data/2.5/weather?q=" + CITY + "&appid=" + WEATHER_API_KEY + "&units=metric&lang=kr")
         .then(function(res) { return res.json(); }).then(function(data) { setWeather(data); });
 
-      // 4. 광주과학고 급식 (나이스 API)
+      // 4. 급식 (로직 강화 버전)
       fetchMeal();
     }
 
@@ -50,26 +53,36 @@ export default function App() {
       var yyyymmdd = d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2);
       var hour = d.getHours();
       
-      var mealCode = "2"; // 기본 중식
+      var targetCode = "2"; // 기본 중식
       var mealName = "점심";
-      
-      if (hour < 9) { mealCode = "1"; mealName = "아침"; }
-      else if (hour >= 14) { mealCode = "3"; mealName = "저녁"; }
+      if (hour < 9) { targetCode = "1"; mealName = "아침"; }
+      else if (hour >= 14) { targetCode = "3"; mealName = "저녁"; }
 
-      var url = "https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json&ATPT_OFCDC_SC_CODE=F10&SD_SCHUL_CODE=7380024&MLSV_YMD=" + yyyymmdd + "&MMEAL_SC_CODE=" + mealCode;
+      // MMEAL_SC_CODE를 빼고 오늘 전체 급식을 다 가져온 뒤 JS에서 필터링 (가장 안정적인 방식)
+      var url = "https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json&ATPT_OFCDC_SC_CODE=F10&SD_SCHUL_CODE=7380024&MLSV_YMD=" + yyyymmdd;
 
       fetch(url)
         .then(function(res) { return res.json(); })
         .then(function(data) {
           if (data.mealServiceDietInfo) {
-            var menu = data.mealServiceDietInfo[1].row[0].DDISH_NM;
-            var cleanMenu = menu.replace(/[0-9.()]/g, "").replace(/<br\/>/g, ", ");
-            setMeal({ label: mealName, menu: cleanMenu });
+            var rows = data.mealServiceDietInfo[1].row;
+            // 현재 시간대에 맞는 급식 찾기
+            var found = rows.filter(function(r) { return r.MMEAL_SC_CODE === targetCode; })[0];
+            
+            if (found) {
+              var cleanMenu = found.DDISH_NM.replace(/[0-9.()]/g, "").replace(/<br\/>/g, ", ");
+              setMeal({ label: mealName, menu: cleanMenu });
+            } else {
+              // 해당 시간대 급식이 없으면 목록에 있는 첫 번째 급식이라도 보여줌
+              var fallback = rows[0];
+              var fallbackMenu = fallback.DDISH_NM.replace(/[0-9.()]/g, "").replace(/<br\/>/g, ", ");
+              setMeal({ label: fallback.MMEAL_SC_NM + "(대체)", menu: fallbackMenu });
+            }
           } else {
-            setMeal({ label: mealName, menu: "오늘 급식 정보가 없습니다." });
+            setMeal({ label: mealName, menu: "오늘 등록된 급식 정보가 없습니다." });
           }
         })
-        .catch(function() { setMeal({ label: mealName, menu: "정보를 불러오지 못했습니다." }); });
+        .catch(function() { setMeal({ label: mealName, menu: "급식 서버 연결 실패" }); });
     }
 
     function updateTime() {
@@ -77,7 +90,6 @@ export default function App() {
       var day = d.getDay(); 
       var time = d.getHours() * 100 + d.getMinutes();
       var p = -1;
-      // 선생님 학교 종소리 시간표 반영
       if (time >= 850 && time < 950) p = 1;
       else if (time >= 950 && time < 1050) p = 2;
       else if (time >= 1050 && time < 1150) p = 3;
@@ -89,7 +101,7 @@ export default function App() {
     }
 
     fetchData(); updateTime();
-    var timer = setInterval(fetchData, 60000);
+    var timer = setInterval(fetchData, 60000 * 5); // 5분마다 갱신
     var timer2 = setInterval(updateTime, 1000);
     return function() { clearInterval(timer); clearInterval(timer2); };
   }, []);
@@ -133,17 +145,15 @@ export default function App() {
           <p style={{ color: '#64748b', fontWeight: 'bold' }}>{now.toLocaleDateString('ko-KR', { dateStyle: 'full' })}</p>
         </div>
 
-        {/* 날씨 카드 */}
         <div style={{ backgroundColor: '#1C1F26', padding: '20px', borderRadius: '24px', border: '1px solid #334155', textAlign: 'center' }}>
           <Cloud size={60} color="#7dd3fc" style={{ margin: '0 auto' }} />
           <p style={{ fontSize: '2.5rem', fontWeight: '900', color: 'white', margin: '10px 0' }}>{(weather && weather.main) ? Math.round(weather.main.temp) : '--'}°C</p>
           <p style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#7dd3fc' }}>{(weather && weather.weather) ? weather.weather[0].description.replace("온흐림","흐림") : "날씨 로딩"}</p>
         </div>
 
-        {/* [NEW] 급식 카드: 시간대에 따라 아침/점심/저녁 자동 전환 */}
-        <div style={{ backgroundColor: '#1C1F26', padding: '20px', borderRadius: '24px', border: '1px solid #334155', flex: 1 }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: '900', color: '#fbbf24', marginBottom: '10px', textAlign: 'center' }}>🍴 오늘 {meal.label} 메뉴</h3>
-          <p style={{ fontSize: '1rem', fontWeight: 'bold', lineHeight: '1.6', color: '#e2e8f0', textAlign: 'center', wordBreak: 'keep-all' }}>{meal.menu}</p>
+        <div style={{ backgroundColor: '#1C1F26', padding: '20px', borderRadius: '24px', border: '1px solid #334155', flex: 1, overflow: 'hidden' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#fbbf24', marginBottom: '10px', textAlign: 'center' }}>🍴 오늘 {meal.label} 메뉴</h3>
+          <p style={{ fontSize: '1rem', fontWeight: 'bold', lineHeight: '1.5', color: '#e2e8f0', textAlign: 'center', wordBreak: 'keep-all' }}>{meal.menu}</p>
         </div>
       </div>
 
