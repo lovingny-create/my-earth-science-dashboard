@@ -126,7 +126,7 @@ export default function App() {
       {/* 중앙 시간표 */}
       <main className="flex-1 bg-[#1C1F26]/80 rounded-3xl border border-slate-700 p-8 flex flex-col z-10 shadow-2xl">
         <h2 className="text-2xl font-black flex items-center gap-3 mb-8 text-white">
-          <Radio size={28} className="text-red-500 animate-pulse" /> 지구과학실 현황
+          <Radio size={28} className="text-red-500 animate-pulse" /> 지구과학과 시간표
         </h2>
         <div className="flex-1 grid grid-cols-6 gap-3">
           <div />
