@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Papa from 'papaparse';
-import { Clock, Radio, CheckCircle2, Pencil, Trash2, X, Cloud } from 'lucide-react';
+import { Clock, Radio, CheckCircle2, Pencil, Trash2, X, Cloud, Sun } from 'lucide-react';
 
 export default function App() {
   const [grid, setGrid] = useState([]);
@@ -11,43 +11,10 @@ export default function App() {
   const [currentPos, setCurrentPos] = useState({ dayIdx: -1, periodIdx: -1 });
   const [todoInput, setTodoInput] = useState("");
 
-  const NEIS_API_KEY = "5bfe4967b9b64a3fb1693f1cc5371d50"; 
-  const TIMETABLE_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSfFMWDov9yz7QPfJOrdu15kgAdzhpJ-kMkn1zW6QjiRUzAecmNh4sPO9C3HzYmmlhl5xS5su3EWQSy/pub?gid=0&output=csv";
-  const TODO_URL = "
-지구과학과 TODO LIST
-지구과학과 TODO LIST
-
-100%
-10
-A1
-
-지구과학과 기자재 논의
- 
- 
- 	
-
-
-스크린 리더 지원 사용 설정
-스크린 리더 기능을 사용하려면 Ctrl+Alt+Z을(를) 누르세요. 단축키에 대해 알아보려면 Ctrl+슬래시을(를) 누르세요.
-웹에 게시
-웹에 게시된 문서입니다.
-
-콘텐츠를 웹에 게시하여 모든 사용자에게 공개하세요. 문서 링크를 올리거나 문서를 삽입할 수 있습니다. 자세히 알아보기
-
-링크
-
-삽입
-전체 문서
-쉼표로 구분된 값(.csv)
-참고: 뷰어가 게시된 차트의 기본 데이터에 액세스할 수도 있습니다. 자세히 알아보기
-https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxvJNpIbTWQjSt7_L0-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?output=csv
-복사하려면 Ctrl+C 키를 누르세요.
-
-복사하려면 Ctrl+C 키를 누르세요.
-또는 다음을 통해 링크를 공유합니다.
-
-파일이 수정되면 자동으로 다시 게시
-";
+  // --- [인증키 및 설정값] ---
+  const NEIS_API_KEY = "여기에_인증키를_넣으세요"; 
+  const TIMETABLE_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEP0A8awuxVJNplbTWQjSt7_LO-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?gid=0&output=csv";
+  const TODO_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEP0A8awuxVJNplbTWQjSt7_LO-fg6LzrEuQUDP2HoKAOHwE7YeTdnLVQ3devIeRf6/pub?gid=210287103&output=csv";
   const WEATHER_API_KEY = "9addde09be74cdb63aab8481a0a207a0"; 
   const CITY = "Gwangju";
 
@@ -57,35 +24,30 @@ https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxvJNpIbTWQ
   const [ctx, setCtx] = useState(null);
 
   useEffect(function() {
-    // --- [선생님이 물어보신 바로 그 부분!] ---
     function fetchData() {
-      // 주소 끝에 시간을 붙여서 구글의 5분 지연을 최대한 우회합니다.
-      const cacheBuster = "&t=" + new Date().getTime(); [cite: 12]
+      // 캐시 방지용 타임스탬프
+      const cacheBuster = "&t=" + new Date().getTime();
 
-      // 1. 시간표 가져오기
-      Papa.parse(TIMETABLE_URL + cacheBuster, { [cite: 12]
-        download: true, 
-        complete: function(res) { setGrid(res.data); } 
-      });
+      // 1. 시간표
+      Papa.parse(TIMETABLE_URL + cacheBuster, { download: true, complete: function(res) { setGrid(res.data); } });
       
-      // 2. 할일 목록 가져오기
-      Papa.parse(TODO_URL + cacheBuster, { [cite: 12]
+      // 2. 할일 목록 (TODO LIST 반영 안되는 문제 해결용)
+      Papa.parse(TODO_URL + cacheBuster, {
         download: true,
         complete: function(res) {
           if (res.data && res.data.length > 0) {
-            var fetched = res.data
-              .filter(function(row) { return row[0] && row[0].trim() !== ""; })
+            var fetched = res.data.filter(function(row) { return row[0] && row[0].trim() !== ""; })
               .map(function(row, idx) { return { id: "sheet-" + idx, text: row[0], done: false }; });
             setTodos(fetched);
           }
         },
       });
 
-      // 3. 날씨 가져오기
+      // 3. 날씨
       fetch("https://api.openweathermap.org/data/2.5/weather?q=" + CITY + "&appid=" + WEATHER_API_KEY + "&units=metric&lang=kr")
         .then(function(res) { return res.json(); }).then(function(data) { setWeather(data); });
 
-      // 4. 급식 가져오기
+      // 4. 급식 (나이스 API)
       fetchMeal();
     }
 
@@ -119,12 +81,12 @@ https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxvJNpIbTWQ
     }
 
     fetchData(); updateTime();
-    var timer = setInterval(fetchData, 60000); // 1분마다 시트 확인
+    var timer = setInterval(fetchData, 60000); 
     var timer2 = setInterval(updateTime, 1000);
     return function() { clearInterval(timer); clearInterval(timer2); };
   }, []);
 
-  // --- 이하 판서 및 디자인 로직 (동일) ---
+  // --- 판서 로직 ---
   useEffect(function() {
     if (memoMode && canvasRef.current) {
       var canvas = canvasRef.current; canvas.width = window.innerWidth; canvas.height = window.innerHeight;
@@ -145,25 +107,46 @@ https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxvJNpIbTWQ
       {memoMode && (
         <canvas ref={canvasRef} onMouseDown={function(e) {setIsDrawing(true); draw(e);}} onMouseUp={function() {setIsDrawing(false); ctx.beginPath();}} onMouseMove={draw} onTouchStart={function(e) {setIsDrawing(true); draw(e);}} onTouchEnd={function() {setIsDrawing(false); ctx.beginPath();}} onTouchMove={draw} style={{ position: 'absolute', inset: 0, zIndex: 50, cursor: 'crosshair', touchAction: 'none' }} />
       )}
+      
+      {/* 하단 컨트롤러 */}
       <div style={{ position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', zIndex: 60, display: 'flex', gap: '15px', backgroundColor: '#1C1F26', padding: '15px', borderRadius: '50px', border: '1px solid #334155' }}>
         <button onClick={function() { setMemoMode(!memoMode); }} style={{ padding: '15px', borderRadius: '50px', border: 'none', backgroundColor: memoMode ? 'white' : '#334155', color: memoMode ? 'black' : 'white' }}>{memoMode ? <X size={28}/> : <Pencil size={28}/>}</button>
         {memoMode && <button onClick={function() { ctx.clearRect(0,0,canvasRef.current.width,canvasRef.current.height); }} style={{ padding: '15px', borderRadius: '50px', border: 'none', backgroundColor: '#dc2626', color: 'white' }}><Trash2 size={28}/></button>}
       </div>
+
+      {/* 1. 사이드바 (Clock -> Weather -> Meal -> Sun) */}
       <div style={{ width: '22%', display: 'flex', flexDirection: 'column', gap: '20px', zIndex: 10 }}>
-        <div style={{ backgroundColor: '#1C1F26', padding: '25px', borderRadius: '24px', border: '1px solid #334155', textAlign: 'center' }}>
-          <h1 style={{ fontSize: '3.5rem', fontWeight: '900', margin: 0, color: 'white' }}>{now.toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' })}</h1>
+        <div style={{ backgroundColor: '#1C1F26', padding: '20px', borderRadius: '24px', border: '1px solid #334155', textAlign: 'center' }}>
+          <h1 style={{ fontSize: '3rem', fontWeight: '900', margin: 0, color: 'white' }}>{now.toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' })}</h1>
           <p style={{ color: '#64748b', fontWeight: 'bold' }}>{now.toLocaleDateString('ko-KR', { dateStyle: 'full' })}</p>
         </div>
-        <div style={{ backgroundColor: '#1C1F26', padding: '20px', borderRadius: '24px', border: '1px solid #334155', textAlign: 'center' }}>
-          <Cloud size={60} color="#7dd3fc" style={{ margin: '0 auto' }} />
-          <p style={{ fontSize: '2.5rem', fontWeight: '900', color: 'white', margin: '10px 0' }}>{(weather && weather.main) ? Math.round(weather.main.temp) : '--'}°C</p>
-          <p style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#7dd3fc' }}>{(weather && weather.weather) ? weather.weather[0].description : "날씨 로딩"}</p>
+
+        <div style={{ backgroundColor: '#1C1F26', padding: '15px', borderRadius: '24px', border: '1px solid #334155', textAlign: 'center' }}>
+          <Cloud size={50} color="#7dd3fc" style={{ margin: '0 auto' }} />
+          <p style={{ fontSize: '2rem', fontWeight: '900', color: 'white', margin: '5px 0' }}>{(weather && weather.main) ? Math.round(weather.main.temp) : '--'}°C</p>
+          <p style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#7dd3fc' }}>{(weather && weather.weather) ? weather.weather[0].description : "로딩 중"}</p>
         </div>
-        <div style={{ backgroundColor: '#1C1F26', padding: '20px', borderRadius: '24px', border: '1px solid #334155', flex: 1, overflow: 'hidden' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#fbbf24', marginBottom: '10px', textAlign: 'center' }}>🍴 오늘 {meal.label} 메뉴</h3>
-          <p style={{ fontSize: '1rem', fontWeight: 'bold', lineHeight: '1.5', color: '#f1f5f9', textAlign: 'center' }}>{meal.menu}</p>
+
+        {/* 급식 카드 */}
+        <div style={{ backgroundColor: '#1C1F26', padding: '15px', borderRadius: '24px', border: '1px solid #334155', minHeight: '120px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#fbbf24', marginBottom: '10px', textAlign: 'center' }}>🍴 {meal.label} 메뉴</h3>
+          <p style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#e2e8f0', textAlign: 'center', lineHeight: '1.4' }}>{meal.menu}</p>
+        </div>
+
+        {/* [NEW] 오늘의 태양 (NASA SDO) */}
+        <div style={{ backgroundColor: '#1C1F26', padding: '15px', borderRadius: '24px', border: '1px solid #334155', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#f87171', marginBottom: '10px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+             <Sun size={20} /> 오늘의 태양 (SDO)
+          </h3>
+          <img 
+            src={"https://sdo.gsfc.nasa.gov/assets/img/latest/latest_1024_0171.jpg?t=" + now.getTime()} 
+            style={{ width: '100%', borderRadius: '15px', objectFit: 'cover' }} 
+            alt="Real-time Sun" 
+          />
         </div>
       </div>
+
+      {/* 2. 중앙 시간표 */}
       <div style={{ flex: 1, backgroundColor: 'rgba(28, 31, 38, 0.8)', borderRadius: '24px', padding: '30px', marginLeft: '20px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', zIndex: 10 }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: '900', margin: '0 0 20px 0', color: 'white' }}>📡 실시간 지구과학실 대시보드</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px', flex: 1 }}>
@@ -187,6 +170,8 @@ https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxvJNpIbTWQ
           })}
         </div>
       </div>
+
+      {/* 3. 오른쪽 할 일 */}
       <div style={{ width: '22%', backgroundColor: '#1C1F26', borderRadius: '24px', padding: '25px', marginLeft: '20px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', zIndex: 10 }}>
         <h3 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#64748b', marginBottom: '20px' }}>TODO LIST</h3>
         <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -199,6 +184,7 @@ https://docs.google.com/spreadsheets/d/e/2PACX-1vQFJ5d-I901hCCEPOA8awuxvJNpIbTWQ
             );
           })}
         </div>
+        <input type="text" placeholder="할 일 추가..." value={todoInput} style={{ width: '100%', backgroundColor: '#0F1115', border: '1px solid #475569', borderRadius: '12px', padding: '10px', color: 'white', marginTop: '10px' }} onChange={function(e) { setTodoInput(e.target.value); }} onKeyPress={function(e) { if (e.key === 'Enter' && todoInput) { setTodos([{ id: Date.now(), text: todoInput, done: false }].concat(todos)); setTodoInput(""); } }} />
       </div>
     </div>
   );
